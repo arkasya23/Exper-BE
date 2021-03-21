@@ -11,8 +11,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using ExperBE.Data;
 using ExperBE.Models.Configuration;
+using ExperBE.Repositories.Wrapper;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 
@@ -49,6 +52,8 @@ namespace ExperBE
                 });
             });
 
+            services.AddScoped<IRepositoryWrapper, RepositoryWrapper>();
+
             services.AddControllers()
                 .AddNewtonsoftJson(opt =>
                 {
@@ -64,6 +69,11 @@ namespace ExperBE
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "ExperBE", Version = "v1" });
+            });
+
+            services.AddDbContext<ExperDbContext>(options =>
+            {
+                options.UseSqlServer(ExperConfiguration.ConnectionString);
             });
         }
 
