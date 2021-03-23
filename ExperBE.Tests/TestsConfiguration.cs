@@ -15,7 +15,7 @@ namespace ExperBE.Tests
         public static void TestsGlobalInitialize(TestContext testContext)
         {
             ExperConfiguration.ConnectionString = "";
-            ExperConfiguration.JwtSecret = "TestSecret";
+            ExperConfiguration.JwtSecret = "TestSecretThatIsSomewhatLongBecauseItActuallyIsRequired";
             ExperConfiguration.SendEmails = false;
         }
     }

@@ -55,5 +55,15 @@ namespace ExperBE.Tests.Libraries
             Assert.IsTrue(jwtToken.ValidTo > DateTime.UtcNow.AddDays(13).AddHours(23).AddMinutes(59));
             Assert.IsTrue(jwtToken.ValidFrom > DateTime.MinValue);
         }
+
+        [TestMethod]
+        public void Jwt_GenerateJwtToken_GeneratesValidToken()
+        {
+            var jwtToken = Jwt.GenerateJwtToken("id", "email");
+            var tokenString = new JwtSecurityTokenHandler().WriteToken(jwtToken);
+            var tokenValidationParameters = Jwt.GetTokenValidationParameters();
+            new JwtSecurityTokenHandler().ValidateToken(tokenString, tokenValidationParameters, out _);
+            // If it did not throw, it is valid
+        }
     }
 }
