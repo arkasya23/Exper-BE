@@ -9,13 +9,13 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace ExperBE.Tests
 {
     [TestClass]
-    public class TestsConfiguration
+    public static class TestsConfiguration
     {
         [AssemblyInitialize]
-        public void TestsGlobalInitialize()
+        public static void TestsGlobalInitialize(TestContext testContext)
         {
             ExperConfiguration.ConnectionString = "";
-            ExperConfiguration.JwtSecret = "TestSecret";
+            ExperConfiguration.JwtSecret = "TestSecretThatIsSomewhatLongBecauseItActuallyIsRequired";
             ExperConfiguration.SendEmails = false;
         }
     }

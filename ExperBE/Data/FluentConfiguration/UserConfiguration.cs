@@ -13,6 +13,13 @@ namespace ExperBE.Data.FluentConfiguration
         public void Configure(EntityTypeBuilder<User> builder)
         {
             builder.HasKey(u => u.Id);
+            builder.Property(u => u.Email)
+                .HasMaxLength(255)
+                .IsRequired();
+            builder.HasIndex(u => u.Email)
+                .IsUnique();
+            builder.HasMany(u => u.Trips)
+                .WithMany(t => t.Users);
         }
     }
 }
