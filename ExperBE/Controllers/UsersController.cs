@@ -29,6 +29,27 @@ namespace ExperBE.Controllers
         }
 
         [AllowAnonymous]
+        [HttpPost("login")]
+        [ProducesResponseType(typeof(UserTokenDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(BadRequestExceptionError), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> Login(UserLoginDto userLoginDto)
+        {
+            await userLoginDto.Validate().ThrowIfInvalid();
+            var user = await _repository.User.GetAll()
+                .ForEmail(userLoginDto.Email)
+                .FirstOrDefaultAsync();
+
+            if (user is null || !user.ValidatePassword(userLoginDto.Password))
+            {
+                return Unauthorized();
+            }
+
+            var tokenDto = user.GenerateJwtToken();
+            return Ok(tokenDto);
+        }
+
+        [AllowAnonymous]
         [HttpPost("register")]
         [ProducesResponseType(typeof(UserTokenDto), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(BadRequestExceptionError), StatusCodes.Status400BadRequest)]
