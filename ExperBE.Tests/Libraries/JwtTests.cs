@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using ExperBE.Libraries;
+using ExperBE.Tests.TestUtils;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace ExperBE.Tests.Libraries
@@ -61,8 +62,7 @@ namespace ExperBE.Tests.Libraries
         {
             var jwtToken = Jwt.GenerateJwtToken("id", "email");
             var tokenString = new JwtSecurityTokenHandler().WriteToken(jwtToken);
-            var tokenValidationParameters = Jwt.GetTokenValidationParameters();
-            new JwtSecurityTokenHandler().ValidateToken(tokenString, tokenValidationParameters, out _);
+            TestUtilMethods.ValidateJwtToken(tokenString);
             // If it did not throw, it is valid
         }
     }
