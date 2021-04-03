@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace ExperBE.Dtos.User
+namespace ExperBE.Dtos.Users
 {
     public class UserTokenDto
     {

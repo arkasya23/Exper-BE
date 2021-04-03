@@ -4,8 +4,9 @@ using System.Linq;
 using System.Net;
 using System.Net.Mail;
 using System.Threading.Tasks;
-using ExperBE.Dtos.User;
+using ExperBE.Dtos.Users;
 using ExperBE.Exceptions;
+using ExperBE.Extensions.ClaimsPrincipal;
 using ExperBE.Extensions.FluentValidation;
 using ExperBE.Extensions.IQueryable;
 using ExperBE.Repositories.Wrapper;
@@ -71,6 +72,22 @@ namespace ExperBE.Controllers
 
             var tokenDto = user.GenerateJwtToken();
             return Ok(tokenDto);
+        }
+
+        [HttpGet("findByEmailStartsWith")]
+        [ProducesResponseType(typeof(IEnumerable<UserDto>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> FindByEmailStartsWith(string email)
+        {
+            var currentUserEmail = User.GetEmail();
+            var users = await _repository.User.GetAll().AsNoTracking()
+                .Where(u => u.Email.StartsWith(email) && u.Email != currentUserEmail)
+                .OrderBy(u => u.Email)
+                .Skip(0)
+                .Take(20)
+                .ToListAsync();
+
+            var dtos = users.Select(u => new UserDto(u));
+            return Ok(dtos);
         }
     }
 }

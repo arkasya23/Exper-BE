@@ -2,7 +2,7 @@
 using FluentValidation;
 using FluentValidation.Results;
 
-namespace ExperBE.Dtos.User
+namespace ExperBE.Dtos.Users
 {
     public class UserRegisterDto
     {

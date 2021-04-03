@@ -13,6 +13,17 @@ namespace ExperBE.Data.FluentConfiguration
         public void Configure(EntityTypeBuilder<GroupExpenseUser> builder)
         {
             builder.HasKey(gu => gu.Id);
+            builder.HasOne(gu => gu.GroupExpense)
+                .WithMany(g => g.Users)
+                .HasForeignKey(gu => gu.GroupExpenseId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.ClientSetNull);
+            builder.HasOne(gu => gu.User)
+                .WithMany()
+                .HasForeignKey(gu => gu.UserId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.ClientSetNull);
+            builder.HasIndex(gu => new { gu.GroupExpenseId, gu.UserId }).IsUnique();
         }
     }
 }

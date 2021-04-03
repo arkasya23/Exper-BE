@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
-using ExperBE.Dtos.User;
+using ExperBE.Dtos.Users;
 using ExperBE.Libraries;
 
 namespace ExperBE.Models.Entities
