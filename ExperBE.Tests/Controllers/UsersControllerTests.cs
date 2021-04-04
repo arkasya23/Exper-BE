@@ -1,16 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 using ExperBE.Controllers;
-using ExperBE.Dtos.User;
+using ExperBE.Dtos.Users;
 using ExperBE.Exceptions;
 using ExperBE.Models.Entities;
 using ExperBE.Repositories.Wrapper;
 using ExperBE.Tests.TestUtils;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
+using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using MockQueryable.Moq;
 using Moq;
@@ -22,20 +25,36 @@ namespace ExperBE.Tests.Controllers
     {
         private Mock<IRepositoryWrapper> _repository;
         private UsersController _controller;
+        private List<User> _users;
 
         [TestInitialize]
         public void UsersControllerTests_Initialize()
         {
             _repository = new Mock<IRepositoryWrapper>();
 
-            var users = new List<User>()
+            _users = new List<User>()
             {
                 User.CreateNew("test@test.com", "password"),
                 User.CreateNew("test2@test.com", "password2")
             };
 
-            _repository.Setup(r => r.User.GetAll()).Returns(users.AsQueryable().BuildMock().Object);
+            _repository.Setup(r => r.User.GetAll()).Returns(_users.AsQueryable().BuildMock().Object);
             _controller = new UsersController(_repository.Object);
+
+            // Setup claims
+            var claims = new List<Claim>()
+            {
+                new Claim(JwtRegisteredClaimNames.Sub, _users.First().Id.ToString()),
+                new Claim(JwtRegisteredClaimNames.Email, _users.First().Email)
+            };
+            var identity = new ClaimsIdentity(claims);
+            var claimsPrincipal = new ClaimsPrincipal(identity);
+
+            var mockContext = new Mock<HttpContext>();
+            mockContext.Setup(c => c.User).Returns(claimsPrincipal);
+
+            _controller.ControllerContext = new ControllerContext();
+            _controller.ControllerContext.HttpContext = mockContext.Object;
         }
 
         [TestMethod]
@@ -192,6 +211,32 @@ namespace ExperBE.Tests.Controllers
             var claims = TestUtilMethods.ValidateJwtToken(token);
             Assert.IsNotNull(claims);
             Assert.IsTrue(claims.HasClaim(c => c.Value == "test@test.com"));
+        }
+
+        [TestMethod]
+        public async Task UsersController_FindByEmailStartsWith_ReturnsEmptyList_IfNoMatch()
+        {
+            var email = "thisIsARandomEmailAddressThatDoesNotExist";
+            var res = await _controller.FindByEmailStartsWith(email) as OkObjectResult;
+            Assert.IsNotNull(res);
+            Assert.IsNotNull(res.Value);
+            Assert.IsTrue(res.IsSuccessStatusCode());
+            var dto = res.Value as IEnumerable<UserDto>;
+            Assert.IsNotNull(dto);
+            Assert.AreEqual(0, dto.Count());
+        }
+
+        [TestMethod]
+        public async Task UsersController_FindByEmailStartsWith_ReturnsMatchedUsers()
+        {
+            var email = _users[1].Email.Substring(0, 3);
+            var res = await _controller.FindByEmailStartsWith(email) as OkObjectResult;
+            Assert.IsNotNull(res);
+            Assert.IsNotNull(res.Value);
+            Assert.IsTrue(res.IsSuccessStatusCode());
+            var dto = res.Value as IEnumerable<UserDto>;
+            Assert.IsNotNull(dto);
+            Assert.IsTrue(dto.Any(u => u.Email == _users[1].Email));
         }
     }
 }

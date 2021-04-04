@@ -13,6 +13,9 @@ namespace ExperBE.Data.FluentConfiguration
         public void Configure(EntityTypeBuilder<Trip> builder)
         {
             builder.HasKey(t => t.Id);
+            builder.Property(t => t.Name)
+                .HasMaxLength(255)
+                .IsRequired();
         }
     }
 }

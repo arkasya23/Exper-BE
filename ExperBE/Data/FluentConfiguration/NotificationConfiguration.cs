@@ -13,6 +13,17 @@ namespace ExperBE.Data.FluentConfiguration
         public void Configure(EntityTypeBuilder<Notification> builder)
         {
             builder.HasKey(n => n.Id);
+            builder.Property(n => n.Title)
+                .HasMaxLength(255)
+                .IsRequired();
+            builder.Property(n => n.Description)
+                .HasMaxLength(2047)
+                .IsRequired();
+            builder.HasOne(n => n.User)
+                .WithMany()
+                .HasForeignKey(n => n.UserId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.ClientSetNull);
         }
     }
 }
