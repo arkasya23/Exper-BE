@@ -4,7 +4,6 @@
       "!Migrations/*.*",
       "!Startup.cs",
       "!Program.cs",
-      "!Middleware/CustomExceptionMiddleware.cs",
       "!Models/Configuration/**/*.*"
     ]
   }
