@@ -78,6 +78,10 @@ namespace ExperBE.Tests.Controllers
                 new PersonalExpense("Third", 3.0m, _users[0].Id, _trips[1].Id)
                 {
                     Id = Guid.NewGuid()
+                },
+                new PersonalExpense("First for second user", 1.0m, _users[1].Id, _trips[0].Id)
+                {
+                    Id = Guid.NewGuid()
                 }
             };
 
@@ -178,6 +182,50 @@ namespace ExperBE.Tests.Controllers
             Assert.AreEqual(createDto.Amount, dto.Amount);
             Assert.AreEqual(createDto.Description, dto.Description);
             Assert.AreEqual(createDto.TripId, dto.TripId);
+        }
+
+        [TestMethod]
+        public async Task PersonalExpensesController_GetAllPersonalExpensesByTripId_ReturnsEmptyList_IfInvalidTrip()
+        {
+            var tripId = Guid.NewGuid();
+            var res = await _controller.GetAllPersonalExpensesByTripId(tripId) as OkObjectResult;
+            Assert.IsNotNull(res);
+            Assert.IsTrue(res.IsSuccessStatusCode());
+            var dto = (res.Value as IEnumerable<PersonalExpenseDto>)?.ToList();
+            Assert.IsNotNull(dto);
+            Assert.AreEqual(0, dto.Count);
+        }
+
+        [TestMethod]
+        public async Task PersonalExpensesController_GetAllPersonalExpensesByTripId_ReturnsEmptyList_IfNoExpenses()
+        {
+            var tripId = _trips[1].Id;
+            _personalExpenses.RemoveAll(e => e.TripId == tripId);
+            var res = await _controller.GetAllPersonalExpensesByTripId(tripId) as OkObjectResult;
+            Assert.IsNotNull(res);
+            Assert.IsTrue(res.IsSuccessStatusCode());
+            var dto = (res.Value as IEnumerable<PersonalExpenseDto>)?.ToList();
+            Assert.IsNotNull(dto);
+            Assert.AreEqual(0, dto.Count);
+        }
+
+        [TestMethod]
+        public async Task PersonalExpensesController_GetAllPersonalExpensesByTripId_ReturnsTrips()
+        {
+            var tripId = _trips[0].Id;
+            var existingExpenses = _personalExpenses
+                .Where(e => e.TripId == tripId && e.CreatedById == _users[0].Id)
+                .ToList();
+            var res = await _controller.GetAllPersonalExpensesByTripId(tripId) as OkObjectResult;
+            Assert.IsNotNull(res);
+            Assert.IsTrue(res.IsSuccessStatusCode());
+            var dto = (res.Value as IEnumerable<PersonalExpenseDto>)?.ToList();
+            Assert.IsNotNull(dto);
+            Assert.AreEqual(existingExpenses.Count, dto.Count);
+            Assert.IsTrue(dto.All(x => existingExpenses.Any(e => 
+                e.Id == x.Id &&
+                e.Amount == x.Amount &&
+                e.Description == x.Description)));
         }
     }
 }

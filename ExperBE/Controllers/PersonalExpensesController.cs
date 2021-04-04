@@ -48,5 +48,17 @@ namespace ExperBE.Controllers
             var result = new PersonalExpenseDto(newPersonalExpense);
             return Ok(result);
         }
+
+        [HttpGet("trip/{tripId}")]
+        [ProducesResponseType(typeof(IEnumerable<PersonalExpenseDto>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetAllPersonalExpensesByTripId(Guid tripId)
+        {
+            var expenses = await _repository.PersonalExpense.GetAll().AsNoTracking()
+                .Where(e => e.CreatedById == User.GetId())
+                .Where(e => e.TripId == tripId)
+                .ToListAsync();
+            var result = expenses.Select(e => new PersonalExpenseDto(e));
+            return Ok(result);
+        }
     }
 }
