@@ -6,12 +6,12 @@ namespace ExperBE.Models.Entities
 {
     public class GroupExpense : BaseEntity
     {
-        public string Description { get; set; } = "";
-        public decimal Amount { get; set; } = 0.0m;
-        public bool DivideBetweenAllMembers { get; set; } = false;
-        public Guid CreatedById { get; set; } = default!;
+        public string Description { get; set; }
+        public decimal Amount { get; set; }
+        public bool DivideBetweenAllMembers { get; set; }
+        public Guid CreatedById { get; set; }
         public User CreatedBy { get; set; } = default!;
-        public Guid TripId { get; set; } = default!;
+        public Guid TripId { get; set; }
         public Trip Trip { get; set; } = default!;
         public ICollection<GroupExpenseUser> Users { get; set; } = default!;
 

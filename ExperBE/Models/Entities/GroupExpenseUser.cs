@@ -5,7 +5,7 @@ namespace ExperBE.Models.Entities
 {
     public class GroupExpenseUser : BaseEntity
     {
-        public Guid UserId { get; set; } = default!;
+        public Guid UserId { get; set; }
         public User User { get; set; } = default!;
         public Guid GroupExpenseId { get; set; } = default!;
         public GroupExpense GroupExpense { get; set; } = default!;

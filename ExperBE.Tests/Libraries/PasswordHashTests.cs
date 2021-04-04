@@ -40,6 +40,10 @@ namespace ExperBE.Tests.Libraries
             Assert.IsFalse(PasswordHash.Verify(password, "", salt));
             Assert.IsFalse(PasswordHash.Verify(password, hash, "wrongSalt"));
             Assert.IsFalse(PasswordHash.Verify(password, hash, ""));
+            Assert.IsFalse(PasswordHash.Verify("", "", ""));
+            Assert.IsFalse(PasswordHash.Verify(password, "", ""));
+            Assert.IsFalse(PasswordHash.Verify("", hash, ""));
+            Assert.IsFalse(PasswordHash.Verify("", "", salt));
         }
     }
 }
