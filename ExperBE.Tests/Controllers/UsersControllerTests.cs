@@ -35,7 +35,9 @@ namespace ExperBE.Tests.Controllers
             _users = new List<User>()
             {
                 User.CreateNew("test@test.com", "password"),
-                User.CreateNew("test2@test.com", "password2")
+                User.CreateNew("test2@test.com", "password2"),
+                User.CreateNew("test4@test.com", "password4"),
+                User.CreateNew("test3@test.com", "password3")
             };
 
             _repository.Setup(r => r.User.GetAll()).Returns(_users.AsQueryable().BuildMock().Object);
@@ -94,7 +96,6 @@ namespace ExperBE.Tests.Controllers
         }
 
         [TestMethod]
-        [ExpectedException(typeof(BadRequestException))]
         public async Task UsersController_Register_IfUserWithSameEmailExists_ThrowsException()
         {
             var dto = new UserRegisterDto()
@@ -103,7 +104,19 @@ namespace ExperBE.Tests.Controllers
                 Password = "anotherPass"
             };
 
-            await _controller.Register(dto);
+            try
+            {
+                await _controller.Register(dto);
+            }
+            catch (BadRequestException ex)
+            {
+                Assert.IsNotNull(ex);
+                Assert.AreEqual(nameof(dto.Email), ex.Error.Errors.First().Key);
+                Assert.AreEqual("Email is already in use", ex.Error.Errors.First().Value.First());
+                return;
+            }
+
+            Assert.Fail();
         }
 
         [TestMethod]
@@ -227,16 +240,23 @@ namespace ExperBE.Tests.Controllers
         }
 
         [TestMethod]
-        public async Task UsersController_FindByEmailStartsWith_ReturnsMatchedUsers()
+        public async Task UsersController_FindByEmailStartsWith_ReturnsMatchedUsers_Ordered()
         {
             var email = _users[1].Email.Substring(0, 3);
             var res = await _controller.FindByEmailStartsWith(email) as OkObjectResult;
             Assert.IsNotNull(res);
             Assert.IsNotNull(res.Value);
             Assert.IsTrue(res.IsSuccessStatusCode());
-            var dto = res.Value as IEnumerable<UserDto>;
+            var dto = (res.Value as IEnumerable<UserDto>)?.ToList();
             Assert.IsNotNull(dto);
             Assert.IsTrue(dto.Any(u => u.Email == _users[1].Email));
+
+            var orderedEmails = _users.Where(e => e.Email.StartsWith(email) && e.Email != _users[0].Email).OrderBy(u => u.Email).Select(u => u.Email).ToList();
+            for(var i = 0; i < dto.Count; i++)
+            {
+                var dtoUser = dto[i];
+                Assert.AreEqual(orderedEmails[i], dtoUser.Email);
+            }
         }
     }
 }
