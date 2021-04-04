@@ -60,5 +60,29 @@ namespace ExperBE.Controllers
             var result = expenses.Select(e => new PersonalExpenseDto(e));
             return Ok(result);
         }
+
+        [HttpPut("{id}")]
+        [ProducesResponseType(typeof(PersonalExpenseDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(BadRequestExceptionError), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> UpdatePersonalExpense(PersonalExpenseUpdateDto dto, Guid id)
+        {
+            await dto.Validate().ThrowIfInvalid();
+            var expense = await _repository.PersonalExpense.GetAll()
+                .Where(e => e.CreatedById == User.GetId())
+                .Where(e => e.Id == id)
+                .FirstOrDefaultAsync();
+            
+            if (expense == null)
+            {
+                return NotFound();
+            }
+
+            expense.Description = dto.Description;
+            expense.Amount = dto.Amount;
+            await _repository.SaveAsync();
+            var result = new PersonalExpenseDto(expense);
+            return Ok(result);
+        }
     }
 }

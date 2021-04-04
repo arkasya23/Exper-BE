@@ -227,5 +227,66 @@ namespace ExperBE.Tests.Controllers
                 e.Amount == x.Amount &&
                 e.Description == x.Description)));
         }
+
+        [TestMethod]
+        [ExpectedException(typeof(BadRequestException))]
+        public async Task PersonalExpensesController_UpdatePersonalExpense_ValidatesDto_AndThrowsIfInvalid()
+        {
+            var expenseId = _personalExpenses[0].Id;
+            var updateDto = new PersonalExpenseUpdateDto();
+            await _controller.UpdatePersonalExpense(updateDto, expenseId);
+        }
+
+        [TestMethod]
+        public async Task PersonalExpensesController_UpdatePersonalExpense_ReturnsNotFound_IfInvalidId()
+        {
+            var expenseId = Guid.NewGuid();
+            var updateDto = new PersonalExpenseUpdateDto
+            {
+                Amount = 123.12m,
+                Description = "New Description"
+            };
+
+            var res = await _controller.UpdatePersonalExpense(updateDto, expenseId) as IStatusCodeActionResult;
+            Assert.IsNotNull(res);
+            Assert.IsFalse(res.IsSuccessStatusCode());
+            Assert.AreEqual(404, res.StatusCode);
+        }
+
+        [TestMethod]
+        public async Task PersonalExpensesController_UpdatePersonalExpense_ReturnsNotFound_IfNotCurrentUsersExpense()
+        {
+            var expenseId = _personalExpenses[0].Id;
+            var updateDto = new PersonalExpenseUpdateDto
+            {
+                Amount = 123.12m,
+                Description = "New Description"
+            };
+            _personalExpenses[0].CreatedById = Guid.NewGuid();
+
+            var res = await _controller.UpdatePersonalExpense(updateDto, expenseId) as IStatusCodeActionResult;
+            Assert.IsNotNull(res);
+            Assert.IsFalse(res.IsSuccessStatusCode());
+            Assert.AreEqual(404, res.StatusCode);
+        }
+
+        [TestMethod]
+        public async Task PersonalExpensesController_UpdatePersonalExpense_ReturnsUpdatedDto()
+        {
+            var expenseId = _personalExpenses[0].Id;
+            var updateDto = new PersonalExpenseUpdateDto
+            {
+                Amount = 123.12m,
+                Description = "New Description"
+            };
+
+            var res = await _controller.UpdatePersonalExpense(updateDto, expenseId) as OkObjectResult;
+            Assert.IsNotNull(res);
+            Assert.IsTrue(res.IsSuccessStatusCode());
+            var dto = res.Value as PersonalExpenseDto;
+            Assert.IsNotNull(dto);
+            Assert.AreEqual(updateDto.Amount, dto.Amount);
+            Assert.AreEqual(updateDto.Description, dto.Description);
+        }
     }
 }
