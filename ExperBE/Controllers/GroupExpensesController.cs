@@ -86,5 +86,20 @@ namespace ExperBE.Controllers
             var result = new GroupExpenseDto(newGroupExpense);
             return Ok(result);
         }
+
+        [HttpGet("trip/{tripId}")]
+        [ProducesResponseType(typeof(IEnumerable<GroupExpenseDto>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetAllGroupExpensesByTripId(Guid tripId)
+        {
+            var expenses = await _repository.GroupExpense.GetAll().AsNoTracking()
+                .Where(e => e.Trip.Users.Select(u => u.Id).Contains(User.GetId()))
+                .Where(e => e.TripId == tripId)
+                .Include(e => e.CreatedBy)
+                .Include(e => e.Users)
+                    .ThenInclude(ou => ou.User)
+                .ToListAsync();
+            var result = expenses.Select(e => new GroupExpenseDto(e));
+            return Ok(result);
+        }
     }
 }

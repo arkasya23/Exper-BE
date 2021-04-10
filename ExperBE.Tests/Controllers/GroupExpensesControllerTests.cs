@@ -71,19 +71,51 @@ namespace ExperBE.Tests.Controllers
             {
                 new GroupExpense("First", 1.0m, false, _users[0].Id, _trips[0].Id)
                 {
-                    Id = Guid.NewGuid()
+                    Id = Guid.NewGuid(),
+                    Users = new List<GroupExpenseUser>
+                    {
+                        new GroupExpenseUser(_users[0].Id)
+                        {
+                            User = _users[0]
+                        }
+                    },
+                    Trip = _trips[0]
                 },
                 new GroupExpense("Second", 2.0m, false, _users[0].Id, _trips[0].Id)
                 {
-                    Id = Guid.NewGuid()
+                    Id = Guid.NewGuid(),
+                    Users = new List<GroupExpenseUser>
+                    {
+                        new GroupExpenseUser(_users[0].Id)
+                        {
+                            User = _users[0]
+                        }
+                    },
+                    Trip = _trips[0]
                 },
                 new GroupExpense("Third", 3.0m, false, _users[0].Id, _trips[1].Id)
                 {
-                    Id = Guid.NewGuid()
+                    Id = Guid.NewGuid(),
+                    Users = new List<GroupExpenseUser>
+                    {
+                        new GroupExpenseUser(_users[0].Id)
+                        {
+                            User = _users[0]
+                        }
+                    },
+                    Trip = _trips[1]
                 },
                 new GroupExpense("First for second user", 1.0m, false, _users[1].Id, _trips[0].Id)
                 {
-                    Id = Guid.NewGuid()
+                    Id = Guid.NewGuid(),
+                    Users = new List<GroupExpenseUser>
+                    {
+                        new GroupExpenseUser(_users[0].Id)
+                        {
+                            User = _users[0]
+                        }
+                    },
+                    Trip = _trips[0]
                 }
             };
 
@@ -229,6 +261,31 @@ namespace ExperBE.Tests.Controllers
             Assert.IsNotNull(res);
             Assert.IsTrue(res.IsSuccessStatusCode());
             _repository.Verify(r => r.Notification.Add(It.IsAny<Notification>()), Times.Once);
+        }
+
+        [TestMethod]
+        public async Task GroupExpenseController_GetAllGroupExpensesByTripId_ReturnsAsExpected()
+        {
+            Guid tripId = _trips[0].Id;
+            var res = await _controller.GetAllGroupExpensesByTripId(tripId) as OkObjectResult;
+            Assert.IsNotNull(res);
+            Assert.IsTrue(res.IsSuccessStatusCode());
+            var dto = (res.Value as IEnumerable<GroupExpenseDto>)?.ToList();
+            Assert.IsNotNull(dto);
+            Assert.AreEqual(3, dto.Count);
+            Assert.IsTrue(dto.All(ge => _groupExpenses.Any(x => x.Id == ge.Id)));
+        }
+
+        [TestMethod]
+        public async Task GroupExpenseController_GetAllGroupExpensesByTripId_ReturnsEmptyList_IfInvalidTripId()
+        {
+            Guid tripId = Guid.NewGuid();
+            var res = await _controller.GetAllGroupExpensesByTripId(tripId) as OkObjectResult;
+            Assert.IsNotNull(res);
+            Assert.IsTrue(res.IsSuccessStatusCode());
+            var dto = (res.Value as IEnumerable<GroupExpenseDto>)?.ToList();
+            Assert.IsNotNull(dto);
+            Assert.AreEqual(0, dto.Count);
         }
     }
 }
