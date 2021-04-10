@@ -107,6 +107,22 @@ namespace ExperBE.Tests.Controllers
             Assert.AreEqual(0, dto.Count);
         }
 
-
+        [TestMethod]
+        public async Task NotificationsController_GetAllNotifications_ReturnsOrderedList()
+        {
+            var notificationsForCurrentUser = _notifications
+                .Where(n => n.UserId == _users[0].Id)
+                .ToList();
+            notificationsForCurrentUser[0].CreatedAt = DateTime.UtcNow;
+            notificationsForCurrentUser[1].CreatedAt = DateTime.UtcNow.AddMinutes(-1);
+            var res = await _controller.GetAllNotifications() as OkObjectResult;
+            Assert.IsTrue(res.IsSuccessStatusCode());
+            Assert.IsNotNull(res);
+            Assert.IsNotNull(res.Value);
+            var dto = (res.Value as IEnumerable<NotificationDto>)?.ToList();
+            Assert.IsNotNull(dto);
+            Assert.AreEqual(notificationsForCurrentUser[0].CreatedAt, dto[0].CreatedAt);
+            Assert.AreEqual(notificationsForCurrentUser[1].CreatedAt, dto[1].CreatedAt);
+        }
     }
 }
