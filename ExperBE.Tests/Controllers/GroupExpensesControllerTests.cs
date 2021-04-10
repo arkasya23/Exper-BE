@@ -79,7 +79,8 @@ namespace ExperBE.Tests.Controllers
                             User = _users[0]
                         }
                     },
-                    Trip = _trips[0]
+                    Trip = _trips[0],
+                    CreatedBy = _users[0]
                 },
                 new GroupExpense("Second", 2.0m, false, _users[0].Id, _trips[0].Id)
                 {
@@ -124,7 +125,8 @@ namespace ExperBE.Tests.Controllers
             _repository.Setup(r => r.GroupExpense.GetAll())
                 .Returns(_groupExpenses.AsQueryable().BuildMock().Object);
             _repository.Setup(r => r.Notification.Add(It.IsAny<Notification>()));
-            _controller = new GroupExpensesController(_repository.Object);
+            _repository.Setup(r => r.GroupExpenseUser.Remove(It.IsAny<GroupExpenseUser>()));
+                _controller = new GroupExpensesController(_repository.Object);
 
             // Setup claims
             var claims = new List<Claim>()
@@ -264,7 +266,7 @@ namespace ExperBE.Tests.Controllers
         }
 
         [TestMethod]
-        public async Task GroupExpenseController_GetAllGroupExpensesByTripId_ReturnsAsExpected()
+        public async Task GroupExpensesController_GetAllGroupExpensesByTripId_ReturnsAsExpected()
         {
             Guid tripId = _trips[0].Id;
             var res = await _controller.GetAllGroupExpensesByTripId(tripId) as OkObjectResult;
@@ -277,7 +279,7 @@ namespace ExperBE.Tests.Controllers
         }
 
         [TestMethod]
-        public async Task GroupExpenseController_GetAllGroupExpensesByTripId_ReturnsEmptyList_IfInvalidTripId()
+        public async Task GroupExpensesController_GetAllGroupExpensesByTripId_ReturnsEmptyList_IfInvalidTripId()
         {
             Guid tripId = Guid.NewGuid();
             var res = await _controller.GetAllGroupExpensesByTripId(tripId) as OkObjectResult;
@@ -286,6 +288,89 @@ namespace ExperBE.Tests.Controllers
             var dto = (res.Value as IEnumerable<GroupExpenseDto>)?.ToList();
             Assert.IsNotNull(dto);
             Assert.AreEqual(0, dto.Count);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(BadRequestException))]
+        public async Task GroupExpensesController_UpdateGroupExpense_ValidatesDtoAndThrowsIfInvalid()
+        {
+            var updateDto = new GroupExpenseUpdateDto();
+            var groupExpenseId = _groupExpenses[0].Id;
+            await _controller.UpdateGroupExpense(updateDto, groupExpenseId);
+        }
+
+        [TestMethod]
+        public async Task GroupExpensesController_UpdateGroupExpense_ReturnsNotFound_IfInvalidId()
+        {
+            var updateDto = new GroupExpenseUpdateDto
+            {
+                Amount = 99.9m,
+                Description = "Yes!",
+                DivideBetweenAllMembers = true
+            };
+            var groupExpenseId = Guid.NewGuid();
+            var res = await _controller.UpdateGroupExpense(updateDto, groupExpenseId) as IStatusCodeActionResult;
+            Assert.IsNotNull(res);
+            Assert.IsFalse(res.IsSuccessStatusCode());
+            Assert.AreEqual(404, res.StatusCode);
+        }
+
+        [TestMethod]
+        public async Task GroupExpensesController_UpdateGroupExpense_ReturnsUpdatedDto()
+        {
+            var updateDto = new GroupExpenseUpdateDto
+            {
+                Amount = 99.9m,
+                Description = "Yes!",
+                DivideBetweenAllMembers = true
+            };
+            var groupExpenseId = _groupExpenses[0].Id;
+            var res = await _controller.UpdateGroupExpense(updateDto, groupExpenseId) as OkObjectResult;
+            Assert.IsNotNull(res);
+            Assert.IsTrue(res.IsSuccessStatusCode());
+            var dto = res.Value as GroupExpenseDto;
+            Assert.IsNotNull(dto);
+            Assert.AreEqual(updateDto.Amount, dto.Amount);
+            Assert.AreEqual(updateDto.Description, dto.Description);
+            Assert.AreEqual(updateDto.DivideBetweenAllMembers, dto.DivideBetweenAllMembers);
+        }
+
+        [TestMethod]
+        public async Task GroupExpensesController_UpdateGroupExpense_SendsNotificationsToEveryoneButCreatingUser_IfDivideBetweenAllMembers()
+        {
+            var updateDto = new GroupExpenseUpdateDto
+            {
+                Amount = 99.9m,
+                Description = "Yes!",
+                DivideBetweenAllMembers = true
+            };
+            var groupExpenseId = _groupExpenses[0].Id;
+            _groupExpenses[0].Trip.Users.Add(_users[1]);
+
+            var res = await _controller.UpdateGroupExpense(updateDto, groupExpenseId) as OkObjectResult;
+            Assert.IsNotNull(res);
+            Assert.IsTrue(res.IsSuccessStatusCode());
+            _repository.Verify(r => r.Notification.Add(
+                It.Is<Notification>(n => _groupExpenses[0].Trip.Users.Any(u => u.Id == n.UserId))));
+        }
+
+        [TestMethod]
+        public async Task GroupExpensesController_UpdateGroupExpense_SendsNotificationsToSpecifiedUsersButCreatingUser_IfDivideBetweenAllMembers()
+        {
+            var updateDto = new GroupExpenseUpdateDto
+            {
+                Amount = 99.9m,
+                Description = "Yes!",
+                DivideBetweenAllMembers = false,
+                UserIds = new List<Guid>{_users[1].Id}
+            };
+            var groupExpenseId = _groupExpenses[0].Id;
+
+            var res = await _controller.UpdateGroupExpense(updateDto, groupExpenseId) as OkObjectResult;
+            Assert.IsNotNull(res);
+            Assert.IsTrue(res.IsSuccessStatusCode());
+            _repository.Verify(r => r.Notification.Add(
+                It.Is<Notification>(n => n.UserId == _users[1].Id)));
         }
     }
 }
