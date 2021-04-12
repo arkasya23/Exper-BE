@@ -89,6 +89,7 @@ namespace ExperBE.Tests.Controllers
             _repository.Setup(r => r.User.GetAll()).Returns(_users.AsQueryable().BuildMock().Object);
             _repository.Setup(r => r.PersonalExpense.GetAll())
                 .Returns(_personalExpenses.AsQueryable().BuildMock().Object);
+            _repository.Setup(r => r.PersonalExpense.Remove(It.IsAny<PersonalExpense>())).Callback<PersonalExpense>((p) => _personalExpenses.Remove(p));
             _controller = new PersonalExpensesController(_repository.Object);
 
             // Setup claims
@@ -287,6 +288,28 @@ namespace ExperBE.Tests.Controllers
             Assert.IsNotNull(dto);
             Assert.AreEqual(updateDto.Amount, dto.Amount);
             Assert.AreEqual(updateDto.Description, dto.Description);
+        }
+
+        [TestMethod]
+        public async Task PersonalExpensesController_DeletePersonalExpense_ReturnsNotFound_IfInvalidId()
+        {
+            var personalExpenseId = Guid.NewGuid();
+            var res = await _controller.DeletePersonalExpense(personalExpenseId) as IStatusCodeActionResult;
+            Assert.IsNotNull(res);
+            Assert.IsFalse(res.IsSuccessStatusCode());
+            Assert.AreEqual(404, res.StatusCode);
+        }
+
+        [TestMethod]
+        public async Task PersonalExpensesController_DeletePersonalExpense_ReturnsAsExpected()
+        {
+            var personalExpenseId = _personalExpenses[0].Id;
+            var res = await _controller.DeletePersonalExpense(personalExpenseId) as IStatusCodeActionResult;
+            Assert.IsNotNull(res);
+            Assert.IsTrue(res.IsSuccessStatusCode());
+
+            var personalExpense = _personalExpenses.Where(g => g.Id == personalExpenseId).FirstOrDefault();
+            Assert.IsNull(personalExpense);
         }
     }
 }
