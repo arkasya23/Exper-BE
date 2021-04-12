@@ -17,7 +17,7 @@ namespace ExperBE.Data.FluentConfiguration
                 .WithMany(g => g.Users)
                 .HasForeignKey(gu => gu.GroupExpenseId)
                 .IsRequired()
-                .OnDelete(DeleteBehavior.ClientSetNull);
+                .OnDelete(DeleteBehavior.Cascade);
             builder.HasOne(gu => gu.User)
                 .WithMany()
                 .HasForeignKey(gu => gu.UserId)

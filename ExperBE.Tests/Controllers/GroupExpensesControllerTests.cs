@@ -126,7 +126,8 @@ namespace ExperBE.Tests.Controllers
                 .Returns(_groupExpenses.AsQueryable().BuildMock().Object);
             _repository.Setup(r => r.Notification.Add(It.IsAny<Notification>()));
             _repository.Setup(r => r.GroupExpenseUser.Remove(It.IsAny<GroupExpenseUser>()));
-                _controller = new GroupExpensesController(_repository.Object);
+            _repository.Setup(r => r.GroupExpense.Remove(It.IsAny<GroupExpense>())).Callback<GroupExpense>((g) => _groupExpenses.Remove(g));
+            _controller = new GroupExpensesController(_repository.Object);
 
             // Setup claims
             var claims = new List<Claim>()
@@ -199,8 +200,8 @@ namespace ExperBE.Tests.Controllers
             Assert.IsNotNull(res);
             Assert.IsTrue(res.IsSuccessStatusCode());
             _repository.Verify(r => r.GroupExpense.Add(
-                It.Is<GroupExpense>(ge => 
-                    ge.Amount == dto.Amount && 
+                It.Is<GroupExpense>(ge =>
+                    ge.Amount == dto.Amount &&
                     ge.Description == dto.Description &&
                     ge.DivideBetweenAllMembers == dto.DivideBetweenAllMembers &&
                     ge.TripId == dto.TripId)), Times.Once);
@@ -362,7 +363,7 @@ namespace ExperBE.Tests.Controllers
                 Amount = 99.9m,
                 Description = "Yes!",
                 DivideBetweenAllMembers = false,
-                UserIds = new List<Guid>{_users[1].Id}
+                UserIds = new List<Guid> { _users[1].Id }
             };
             var groupExpenseId = _groupExpenses[0].Id;
 
@@ -371,6 +372,29 @@ namespace ExperBE.Tests.Controllers
             Assert.IsTrue(res.IsSuccessStatusCode());
             _repository.Verify(r => r.Notification.Add(
                 It.Is<Notification>(n => n.UserId == _users[1].Id)));
+        }
+
+        [TestMethod]
+        public async Task GroupExpensesController_DeleteGroupExpense_ReturnsNotFound_IfInvalidId()
+        {
+            var groupExpenseId = Guid.NewGuid();
+            var res = await _controller.DeleteGroupExpense(groupExpenseId) as IStatusCodeActionResult;
+            Assert.IsNotNull(res);
+            Assert.IsFalse(res.IsSuccessStatusCode());
+            Assert.AreEqual(404, res.StatusCode);
+        }
+
+        [TestMethod]
+        public async Task GroupExpensesController_DeleteGroupExpense_ReturnsAsExpected()
+        {
+            var groupExpenseId = _groupExpenses[0].Id;
+            var tripId = _groupExpenses[0].TripId;
+            var res = await _controller.DeleteGroupExpense(groupExpenseId) as IStatusCodeActionResult;
+            Assert.IsNotNull(res);
+            Assert.IsTrue(res.IsSuccessStatusCode());
+
+            var groupExpense = _groupExpenses.Where(g => g.Id == groupExpenseId).FirstOrDefault();
+            Assert.IsNull(groupExpense);
         }
     }
 }
