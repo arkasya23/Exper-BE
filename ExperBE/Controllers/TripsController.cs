@@ -112,5 +112,28 @@ namespace ExperBE.Controllers
             await _repository.SaveAsync();
             return Ok(new TripDto(trip));
         }
+
+        [HttpDelete("{tripId}/removeUser/{userId}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> RemoveUserFromTrip(Guid tripId, Guid userId)
+        {
+            var trip = await _repository.Trip.GetAll()
+                    .Where(t => t.Id == tripId)
+                    .Include(t => t.Users)
+                    .Where(t => t.Users.Select(u => u.Id).Contains(userId))
+                    .FirstOrDefaultAsync();
+
+            if (trip == null)
+            {
+                return NotFound();
+            }
+
+            var user = trip.Users.Where(u => u.Id == userId).FirstOrDefault();
+            trip.Users.Remove(user);
+            await _repository.SaveAsync();
+            return Ok();
+        }
+
     }
 }

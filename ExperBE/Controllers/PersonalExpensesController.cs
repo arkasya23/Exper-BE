@@ -72,7 +72,7 @@ namespace ExperBE.Controllers
                 .Where(e => e.CreatedById == User.GetId())
                 .Where(e => e.Id == id)
                 .FirstOrDefaultAsync();
-            
+
             if (expense == null)
             {
                 return NotFound();
@@ -83,6 +83,25 @@ namespace ExperBE.Controllers
             await _repository.SaveAsync();
             var result = new PersonalExpenseDto(expense);
             return Ok(result);
+        }
+
+        [HttpDelete("{id}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> DeletePersonalExpense(Guid id)
+        {
+            var expense = await _repository.PersonalExpense.GetAll()
+                .Where(g => g.Id == id)
+                .FirstOrDefaultAsync();
+
+            if (expense == null)
+            {
+                return NotFound();
+            }
+
+            _repository.PersonalExpense.Remove(expense);
+            await _repository.SaveAsync();
+            return Ok();
         }
     }
 }
