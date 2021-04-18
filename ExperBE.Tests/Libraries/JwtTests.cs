@@ -65,5 +65,16 @@ namespace ExperBE.Tests.Libraries
             TestUtilMethods.ValidateJwtToken(tokenString);
             // If it did not throw, it is valid
         }
+
+        [TestMethod]
+        public void Jwt_GenerateJwtToken_IssuerAndAudienceIsFmi()
+        {
+            var jwtToken = Jwt.GenerateJwtToken("id", "email");
+            var tokenString = new JwtSecurityTokenHandler().WriteToken(jwtToken);
+            var claimsPrincipal = TestUtilMethods.ValidateJwtToken(tokenString);
+            Assert.IsTrue(claimsPrincipal.Claims.Any(c => c.Value == "fmi" && c.Type == JwtRegisteredClaimNames.Iss));
+            Assert.IsTrue(claimsPrincipal.Claims.Any(c => c.Value == "fmi" && c.Type == JwtRegisteredClaimNames.Aud));
+
+        }
     }
 }

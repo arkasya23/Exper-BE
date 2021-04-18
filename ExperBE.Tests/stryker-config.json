@@ -1,0 +1,10 @@
+{
+  "stryker-config": {
+    "mutate": [
+      "!Migrations/*.*",
+      "!Startup.cs",
+      "!Program.cs",
+      "!Models/Configuration/**/*.*"
+    ]
+  }
+}

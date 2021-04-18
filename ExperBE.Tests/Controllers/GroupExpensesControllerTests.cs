@@ -242,7 +242,24 @@ namespace ExperBE.Tests.Controllers
             var res = await _controller.CreateGroupExpense(createDto) as OkObjectResult;
             Assert.IsNotNull(res);
             Assert.IsTrue(res.IsSuccessStatusCode());
-            _repository.Verify(r => r.Notification.Add(It.IsAny<Notification>()), Times.Once);
+            _repository.Verify(r => r.Notification.Add(It.Is<Notification>(n => n.Title.Contains("New group expense") && n.Description.Contains("new group expense"))), Times.Once);
+        }
+
+        [TestMethod]
+        public async Task GroupExpensesController_CreateGroupExpense_ContainsShareAmount_IfDivideBetweenAllMembers()
+        {
+            var createDto = new GroupExpenseCreateDto
+            {
+                Amount = 1.0m,
+                Description = "Random",
+                DivideBetweenAllMembers = true,
+                TripId = _trips.First().Id
+            };
+            _trips.First().Users.Add(_users[1]);
+            var res = await _controller.CreateGroupExpense(createDto) as OkObjectResult;
+            Assert.IsNotNull(res);
+            Assert.IsTrue(res.IsSuccessStatusCode());
+            _repository.Verify(r => r.Notification.Add(It.Is<Notification>(n => n.Description.Contains("0.5"))), Times.Once);
         }
 
         [TestMethod]
@@ -263,7 +280,28 @@ namespace ExperBE.Tests.Controllers
             var res = await _controller.CreateGroupExpense(createDto) as OkObjectResult;
             Assert.IsNotNull(res);
             Assert.IsTrue(res.IsSuccessStatusCode());
-            _repository.Verify(r => r.Notification.Add(It.IsAny<Notification>()), Times.Once);
+            _repository.Verify(r => r.Notification.Add(It.Is<Notification>(n => n.Title.Contains("New group expense") && n.Description.Contains("new group expense"))), Times.Once);
+        }
+
+        [TestMethod]
+        public async Task GroupExpensesController_CreateGroupExpense_ContainsShareAmount_IfNotDivideBetweenAllMembers()
+        {
+            var createDto = new GroupExpenseCreateDto
+            {
+                Amount = 1.3m,
+                Description = "Random",
+                DivideBetweenAllMembers = false,
+                TripId = _trips.First().Id,
+                UserIds = new List<Guid>()
+                {
+                    _users[1].Id
+                }
+            };
+            _trips.First().Users.Add(_users[1]);
+            var res = await _controller.CreateGroupExpense(createDto) as OkObjectResult;
+            Assert.IsNotNull(res);
+            Assert.IsTrue(res.IsSuccessStatusCode());
+            _repository.Verify(r => r.Notification.Add(It.Is<Notification>(n => n.Description.Contains("1.3"))), Times.Once);
         }
 
         [TestMethod]
@@ -352,11 +390,11 @@ namespace ExperBE.Tests.Controllers
             Assert.IsNotNull(res);
             Assert.IsTrue(res.IsSuccessStatusCode());
             _repository.Verify(r => r.Notification.Add(
-                It.Is<Notification>(n => _groupExpenses[0].Trip.Users.Any(u => u.Id == n.UserId))));
+                It.Is<Notification>(n => n.Title.Contains("group expense was updated") && n.Description.Contains("was updated") && _groupExpenses[0].Trip.Users.Any(u => u.Id == n.UserId))), Times.Once);
         }
 
         [TestMethod]
-        public async Task GroupExpensesController_UpdateGroupExpense_SendsNotificationsToSpecifiedUsersButCreatingUser_IfDivideBetweenAllMembers()
+        public async Task GroupExpensesController_UpdateGroupExpense_SendsNotificationsToSpecifiedUsersButCreatingUser_IfNotDivideBetweenAllMembers()
         {
             var updateDto = new GroupExpenseUpdateDto
             {
@@ -371,7 +409,67 @@ namespace ExperBE.Tests.Controllers
             Assert.IsNotNull(res);
             Assert.IsTrue(res.IsSuccessStatusCode());
             _repository.Verify(r => r.Notification.Add(
-                It.Is<Notification>(n => n.UserId == _users[1].Id)));
+                It.Is<Notification>(n => n.Title.Contains("group expense was updated") && n.Description.Contains("was updated") && n.UserId == _users[1].Id)), Times.Once);
+        }
+
+        [TestMethod]
+        public async Task GroupExpensesController_UpdateGroupExpense_DoesNotAddUser_IfAlreadyInExpense()
+        {
+            var updateDto = new GroupExpenseUpdateDto
+            {
+                Amount = 99.9m,
+                Description = "Yes!",
+                DivideBetweenAllMembers = false,
+                UserIds = new List<Guid> { _users[1].Id }
+            };
+            var groupExpenseId = _groupExpenses[0].Id;
+            _groupExpenses[0].Trip.Users.Add(_users[1]);
+
+            var res = await _controller.UpdateGroupExpense(updateDto, groupExpenseId) as OkObjectResult;
+            Assert.IsNotNull(res);
+            Assert.IsTrue(res.IsSuccessStatusCode());
+            _repository.Verify(r => r.Notification.Add(
+                It.Is<Notification>(n => n.Title.Contains("group expense was updated") && n.Description.Contains("was updated") && n.UserId == _users[1].Id)), Times.Once);
+        }
+
+        [TestMethod]
+        public async Task GroupExpensesController_UpdateGroupExpense_NotificationContainsShareAmount_IfNotDivideBetweenAllMembers()
+        {
+            var updateDto = new GroupExpenseUpdateDto
+            {
+                Amount = 99.9m,
+                Description = "Yes!",
+                DivideBetweenAllMembers = false,
+                UserIds = new List<Guid> { _users[1].Id }
+            };
+            var groupExpenseId = _groupExpenses[0].Id;
+            _groupExpenses[0].Trip.Users.Add(_users[1]);
+            _trips[0].Users.Add(_users[1]);
+
+            var res = await _controller.UpdateGroupExpense(updateDto, groupExpenseId) as OkObjectResult;
+            Assert.IsNotNull(res);
+            Assert.IsTrue(res.IsSuccessStatusCode());
+            _repository.Verify(r => r.Notification.Add(
+                It.Is<Notification>(n => n.Description.Contains("99.9") && n.UserId == _users[1].Id)), Times.Once);
+        }
+
+        [TestMethod]
+        public async Task GroupExpensesController_UpdateGroupExpense_NotificationContainsShareAmount_IfDivideBetweenAllMembers()
+        {
+            var updateDto = new GroupExpenseUpdateDto
+            {
+                Amount = 90m,
+                Description = "Yes!",
+                DivideBetweenAllMembers = true
+            };
+            var groupExpenseId = _groupExpenses[0].Id;
+            _groupExpenses[0].Trip.Users.Add(_users[1]);
+
+            var res = await _controller.UpdateGroupExpense(updateDto, groupExpenseId) as OkObjectResult;
+            Assert.IsNotNull(res);
+            Assert.IsTrue(res.IsSuccessStatusCode());
+            _repository.Verify(r => r.Notification.Add(
+                It.Is<Notification>(n => n.Description.Contains("45") && n.UserId == _users[1].Id)), Times.Once);
         }
 
         [TestMethod]

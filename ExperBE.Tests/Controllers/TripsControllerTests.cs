@@ -253,6 +253,29 @@ namespace ExperBE.Tests.Controllers
         }
 
         [TestMethod]
+        public async Task TripsController_AddUsersToTrip_DoesNotAddExistingUserToTrip()
+        {
+            _trips[0].Id = Guid.NewGuid();
+            var addDto = new TripAddUsersDto()
+            {
+                TripId = _trips[0].Id,
+                UserIds = new List<Guid>()
+                {
+                    _users[0].Id
+                }
+            };
+            var res = await _controller.AddUsersToTrip(addDto) as OkObjectResult;
+            Assert.IsNotNull(res);
+            Assert.IsNotNull(res.Value);
+            Assert.IsTrue(res.IsSuccessStatusCode());
+            Assert.IsInstanceOfType(res.Value, typeof(TripDto));
+            var dto = res.Value as TripDto;
+            Assert.IsNotNull(dto);
+            Assert.AreEqual(_trips[0].Name, dto.Name);
+            Assert.IsTrue(dto.Users.Single(u => u.Id == _users[0].Id) != null);
+        }
+
+        [TestMethod]
         public async Task TripsController_RemoveUserFromTrip_ReturnsNotFound_IfInvalidTripId()
         {
             var tripId = Guid.NewGuid();
