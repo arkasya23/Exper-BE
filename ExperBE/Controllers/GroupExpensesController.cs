@@ -180,5 +180,24 @@ namespace ExperBE.Controllers
             return Ok(result);
         }
 
+        [HttpDelete("{id}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> DeleteGroupExpense(Guid id)
+        {
+            var expense = await _repository.GroupExpense.GetAll()
+                .Where(g => g.Id == id)
+                .FirstOrDefaultAsync();
+
+            if (expense == null)
+            {
+                return NotFound();
+            }
+
+            _repository.GroupExpense.Remove(expense);
+            await _repository.SaveAsync();
+            return Ok();
+        }
+
     }
 }

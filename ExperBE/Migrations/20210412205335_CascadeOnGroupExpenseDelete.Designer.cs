@@ -4,14 +4,16 @@ using ExperBE.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace ExperBE.Migrations
 {
     [DbContext(typeof(ExperDbContext))]
-    partial class ExperDbContextModelSnapshot : ModelSnapshot
+    [Migration("20210412205335_CascadeOnGroupExpenseDelete")]
+    partial class CascadeOnGroupExpenseDelete
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

@@ -274,5 +274,51 @@ namespace ExperBE.Tests.Controllers
             Assert.AreEqual(_trips[0].Name, dto.Name);
             Assert.IsTrue(dto.Users.Single(u => u.Id == _users[0].Id) != null);
         }
+
+        [TestMethod]
+        public async Task TripsController_RemoveUserFromTrip_ReturnsNotFound_IfInvalidTripId()
+        {
+            var tripId = Guid.NewGuid();
+            var userId = _trips[0].Users.First().Id;
+            var res = await _controller.RemoveUserFromTrip(tripId, userId) as IStatusCodeActionResult;
+            Assert.IsNotNull(res);
+            Assert.IsFalse(res.IsSuccessStatusCode());
+            Assert.AreEqual(404, res.StatusCode);
+        }
+
+        [TestMethod]
+        public async Task TripsController_RemoveUserFromTrip_ReturnsNotFound_IfInvalidUserId()
+        {
+            var tripId = _trips[0].Id;
+            var userId = Guid.NewGuid();
+            var res = await _controller.RemoveUserFromTrip(tripId, userId) as IStatusCodeActionResult;
+            Assert.IsNotNull(res);
+            Assert.IsFalse(res.IsSuccessStatusCode());
+            Assert.AreEqual(404, res.StatusCode);
+        }
+
+        [TestMethod]
+        public async Task TripsController_RemoveUserFromTrip_ReturnsNotFound_IfInvalidTripId_And_InvalidUserId()
+        {
+            var tripId = Guid.NewGuid();
+            var userId = Guid.NewGuid();
+            var res = await _controller.RemoveUserFromTrip(tripId, userId) as IStatusCodeActionResult;
+            Assert.IsNotNull(res);
+            Assert.IsFalse(res.IsSuccessStatusCode());
+            Assert.AreEqual(404, res.StatusCode);
+        }
+
+        [TestMethod]
+        public async Task TripsController_RemoveUserFromTrip_ReturnsAsExpected()
+        {
+            var tripId = _trips[0].Id;
+            var userId = _trips[0].Users.First().Id;
+            var res = await _controller.RemoveUserFromTrip(tripId, userId) as IStatusCodeActionResult;
+            Assert.IsNotNull(res);
+            Assert.IsTrue(res.IsSuccessStatusCode());
+
+            var user = _trips[0].Users.Where(u => u.Id == userId).FirstOrDefault();
+            Assert.IsNull(user);
+        }
     }
 }
