@@ -48,7 +48,7 @@ namespace ExperBE.Tests.Controllers
 
             _trips = new List<Trip>()
             {
-                new Trip("trip1")
+                new Trip("trip1", _users[0].Id)
                 {
                     Id = Guid.NewGuid(),
                     Users = new List<User>()
@@ -56,7 +56,7 @@ namespace ExperBE.Tests.Controllers
                         _users[0]
                     }
                 },
-                new Trip("trip2")
+                new Trip("trip2", _users[0].Id)
                 {
                     Id = Guid.NewGuid(),
                     Users = new List<User>()

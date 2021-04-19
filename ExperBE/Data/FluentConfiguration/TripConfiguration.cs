@@ -16,6 +16,11 @@ namespace ExperBE.Data.FluentConfiguration
             builder.Property(t => t.Name)
                 .HasMaxLength(255)
                 .IsRequired();
+            builder.HasOne(t => t.CreatedByUser)
+                .WithMany()
+                .HasForeignKey(t => t.CreatedByUserId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.ClientSetNull);
         }
     }
 }

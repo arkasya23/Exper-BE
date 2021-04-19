@@ -37,7 +37,7 @@ namespace ExperBE.Controllers
                 userIds.Add(User.GetId());
             }
 
-            var newTrip = new Trip(dto.Name);
+            var newTrip = new Trip(dto.Name, User.GetId());
             newTrip.Users = await _repository.User.GetAll()
                 .Where(u => userIds.Contains(u.Id))
                 .ToListAsync();
@@ -45,6 +45,9 @@ namespace ExperBE.Controllers
             _repository.Trip.Add(newTrip);
             await _repository.SaveAsync();
 
+            newTrip.CreatedByUser = await _repository.User
+                .GetAll()
+                .FirstOrDefaultAsync(u => u.Id == newTrip.CreatedByUserId);
             return Ok(new TripDto(newTrip));
         }
 
@@ -54,6 +57,7 @@ namespace ExperBE.Controllers
         {
             var userId = User.GetId();
             var trips = await _repository.Trip.GetAll()
+                .Include(t => t.CreatedByUser)
                 .Where(t => t.Users.Select(u => u.Id).Contains(userId))
                 .Include(t => t.Users)
                 .ToListAsync();
@@ -69,6 +73,7 @@ namespace ExperBE.Controllers
             var trip = await _repository.Trip.GetAll()
                 .Where(t => t.Id == tripId)
                 .Where(t => t.Users.Select(u => u.Id).Contains(userId))
+                .Include(t => t.CreatedByUser)
                 .Include(t => t.Users)
                 .FirstOrDefaultAsync();
             if (trip == null)
@@ -90,6 +95,7 @@ namespace ExperBE.Controllers
             var trip = await _repository.Trip.GetAll()
                 .Where(t => t.Id == dto.TripId)
                 .Where(t => t.Users.Select(u => u.Id).Contains(userId))
+                .Include(t => t.CreatedByUser)
                 .Include(t => t.Users)
                 .FirstOrDefaultAsync();
 
@@ -119,21 +125,26 @@ namespace ExperBE.Controllers
         public async Task<IActionResult> RemoveUserFromTrip(Guid tripId, Guid userId)
         {
             var trip = await _repository.Trip.GetAll()
-                    .Where(t => t.Id == tripId)
-                    .Include(t => t.Users)
-                    .Where(t => t.Users.Select(u => u.Id).Contains(userId))
-                    .FirstOrDefaultAsync();
+                .Where(t => t.Id == tripId)
+                .Include(t => t.CreatedByUser)
+                .Include(t => t.Users)
+                .Where(t => t.Users.Select(u => u.Id).Contains(userId))
+                .FirstOrDefaultAsync();
 
-            if (trip == null)
+            var user = trip?.Users.FirstOrDefault(u => u.Id == userId);
+            if (trip == null || user == null)
             {
                 return NotFound();
             }
 
-            var user = trip.Users.Where(u => u.Id == userId).FirstOrDefault();
+            if (user.Id == trip.CreatedByUserId)
+            {
+                return BadRequest();
+            }
+
             trip.Users.Remove(user);
             await _repository.SaveAsync();
             return Ok();
         }
-
     }
 }
