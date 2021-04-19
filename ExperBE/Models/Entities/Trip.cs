@@ -8,13 +8,16 @@ namespace ExperBE.Models.Entities
     {
         public string Name { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public Guid CreatedByUserId { get; set; } = default!;
+        public User CreatedByUser { get; set; } = default!;
         public ICollection<User> Users { get; set; } = default!;
         public ICollection<GroupExpense> GroupExpenses { get; set; } = default!;
         public ICollection<PersonalExpense> PersonalExpenses { get; set; } = default!;
 
-        public Trip(string name)
+        public Trip(string name, Guid createdByUserId)
         {
             Name = name;
+            CreatedByUserId = createdByUserId;
         }
     }
 }

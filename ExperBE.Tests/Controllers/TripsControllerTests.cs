@@ -44,14 +44,14 @@ namespace ExperBE.Tests.Controllers
 
             _trips = new List<Trip>()
             {
-                new Trip("trip1")
+                new Trip("trip1", _users[0].Id)
                 {
                     Users = new List<User>()
                     {
                         _users[0]
                     }
                 },
-                new Trip("trip2")
+                new Trip("trip2", _users[0].Id)
                 {
                     Users = new List<User>()
                     {
@@ -313,12 +313,25 @@ namespace ExperBE.Tests.Controllers
         {
             var tripId = _trips[0].Id;
             var userId = _trips[0].Users.First().Id;
+            _trips[0].CreatedByUserId = _users[1].Id;
             var res = await _controller.RemoveUserFromTrip(tripId, userId) as IStatusCodeActionResult;
             Assert.IsNotNull(res);
             Assert.IsTrue(res.IsSuccessStatusCode());
 
-            var user = _trips[0].Users.Where(u => u.Id == userId).FirstOrDefault();
+            var user = _trips[0].Users.FirstOrDefault(u => u.Id == userId);
             Assert.IsNull(user);
+        }
+
+        [TestMethod]
+        public async Task TripsController_RemoveUserFromTrip_ReturnsBadRequest_IfRemovingUserWhoCreatedTrip()
+        {
+            var tripId = _trips[0].Id;
+            var userId = _trips[0].Users.First().Id;
+            _trips[0].CreatedByUserId = userId;
+            var res = await _controller.RemoveUserFromTrip(tripId, userId) as IStatusCodeActionResult;
+            Assert.IsNotNull(res);
+            Assert.IsFalse(res.IsSuccessStatusCode());
+            Assert.AreEqual(400, res.StatusCode);
         }
     }
 }
